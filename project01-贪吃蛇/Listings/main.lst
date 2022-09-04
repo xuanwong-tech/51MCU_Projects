@@ -1,0 +1,244 @@
+C51 COMPILER V9.54   MAIN                                                                  09/04/2022 14:30:53 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main
+                    -.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <REGX52.H>
+   2          #include "MatrixLed.h"
+   3          #include "MatrixKey.h"
+   4          #include "Delay.h"
+   5          #include "Timer0.h"
+   6          
+   7          void Food_Produce();
+   8          void Food_Eat();
+   9          void Body_Init();
+  10          void Body_Death();
+  11          void Body_Move();
+  12          void Body_Switch();
+  13          
+  14          unsigned int mode = 12;                                                                                 //定义行走模式
+  15          int head_x = 0, head_y = 0;                                                                             //初始化蛇头的位置
+  16          int length = 1;                                                                                                 //初始化蛇身长度
+  17          int body_x[14] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};   //初始化蛇身横向坐标
+  18          int body_y[14] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};   //初始化蛇身纵向坐标
+  19          int food_x, food_y;                                                                                             //初始化食物坐标
+  20          int random_location[2] = {3, 7};                                                                //初始化随机坐标
+  21          int dead;                                                                                                               //初始化蛇身死亡遍历索引
+  22          int o, p;                                                                                                               //初始化蛇身变化计数循环索引
+  23          unsigned char keyNum;                                                                                   //初始化矩阵按键键码
+  24          int i;                                                                                                                  //初始化main函数内循环索引
+  25          
+  26          void main()
+  27          {
+  28   1              Timer0_Init();          //定时器初始化，用于蛇头更新
+  29   1              MatrixLed_Init();       //LED点阵屏初始化
+  30   1              Food_Produce();         //产生食物
+  31   1              
+  32   1              while (1)
+  33   1              {
+  34   2                      if ((mode != 10) && (keyNum == 10)) mode = 10;                  //根据键码以及当前模式判定是否需要改�
+             -�模式
+  35   2                      if ((mode != 12) && (keyNum == 12)) mode = 12;
+  36   2                      if ((mode != 15) && (keyNum == 15)) mode = 15;
+  37   2                      if ((mode != 7) && (keyNum == 7)) mode = 7;
+  38   2                      
+  39   2                      MatrixLed_translate(head_x, head_y);                                    //绘制蛇头及食物的坐标
+  40   2                      MatrixLed_translate(food_x, food_y);
+  41   2                      
+  42   2                      Food_Eat();                                                                                             //检测食物是否被吃
+  43   2                      
+  44   2                      //根据length绘制蛇身
+  45   2                      //思想：长度为1时，绘制蛇头
+  46   2                      switch(length)          
+  47   2                      {                       
+  48   3                              case 1: MatrixLed_translate(body_x[0], body_y[0]); break;
+  49   3                              case 2: for (i = 0; i < 2; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  50   3                              case 3: for (i = 0; i < 3; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  51   3                              case 4: for (i = 0; i < 5; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  52   3                              case 5: for (i = 0; i < 6; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  53   3                              case 6: for (i = 0; i < 7; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+C51 COMPILER V9.54   MAIN                                                                  09/04/2022 14:30:53 PAGE 2   
+
+  54   3                              case 7: for (i = 0; i < 8; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  55   3                              case 8: for (i = 0; i < 9; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  56   3                              case 9: for (i = 0; i < 10; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  57   3                              case 10: for (i = 0; i < 11; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  58   3                              case 11: for (i = 0; i < 12; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  59   3                              case 12: for (i = 0; i < 13; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  60   3                              case 13: for (i = 0; i < 14; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  61   3                              case 14: for (i = 0; i < 15; i++) {MatrixLed_translate(body_x[i], body_y[i]);} break;
+  62   3                      }
+  63   2              }
+  64   1      }
+  65          
+  66          /**
+  67            * @brief      食物产生
+  68            * @param      无
+  69            * @retval     无
+  70            */
+  71          void Food_Produce()
+  72          {
+  73   1              food_x = random_location[0] % 10;
+  74   1              if (random_location[0] % 10 >= 8)
+  75   1                      food_x = 5;
+  76   1              
+  77   1              food_y = random_location[1] % 10;
+  78   1              if (random_location[1] % 10 >= 8)
+  79   1                      food_y = 7;
+  80   1              
+  81   1              random_location[0] += 3;
+  82   1              random_location[1] += 7;
+  83   1      }
+  84          
+  85          /**
+  86            * @brief      食物被吃掉
+  87            * @param      无
+  88            * @retval     无
+  89            */
+  90          void Food_Eat()
+  91          {
+  92   1              if ((head_x == food_x) && (head_y == food_y))
+  93   1              {
+  94   2                      food_x = 8;
+  95   2                      food_y = 8;
+  96   2                      Food_Produce();
+  97   2                      length ++;
+  98   2              }
+  99   1      }
+ 100          
+ 101          /**
+ 102            * @brief      蛇身初始化
+ 103            * @param      无
+ 104            * @retval     无
+ 105            */
+ 106          void Body_Init()
+ 107          {
+ 108   1              int x;
+ 109   1              for (x = 0; x < 15; x++)
+ 110   1              {
+ 111   2                      body_x[x] = -1;
+ 112   2                      body_y[x] = -1;
+ 113   2              }
+ 114   1      }
+ 115          
+C51 COMPILER V9.54   MAIN                                                                  09/04/2022 14:30:53 PAGE 3   
+
+ 116          /**
+ 117            * @brief      蛇身死亡
+ 118            * @param      无
+ 119            * @retval     无
+ 120            */
+ 121          void Body_Death()
+ 122          {
+ 123   1              for (dead = 0; dead < 12; dead++)
+ 124   1              {
+ 125   2                      if ((head_x == body_x[dead]) && (head_y == body_y[dead]))
+ 126   2                      {
+ 127   3                              length = 1;
+ 128   3                              Body_Init();
+ 129   3                      }
+ 130   2              }
+ 131   1      }
+ 132          
+ 133          /**
+ 134            * @brief      蛇身行走模式的切换
+ 135            * @param      无
+ 136            * @retval     无
+ 137            */
+ 138          void Body_Move()
+ 139          {
+ 140   1              switch (mode)
+ 141   1              {
+ 142   2                      case 10: head_x--; if (head_x <= -1) head_x = 7; break;         //左
+ 143   2                      case 12: head_x++; if (head_x >= 8) head_x = 0; break;          //右
+ 144   2                      case 7: head_y++; if (head_y >= 8) head_y = 0; break;           //上
+ 145   2                      case 15: head_y--; if (head_y <= -1) head_y = 7; break;         //下
+ 146   2                      default: break;
+ 147   2              }
+ 148   1      }
+ 149          
+ 150          /**
+ 151            * @brief      蛇身的变化
+ 152            * @param      无
+ 153            * @retval     无
+ 154            */
+ 155          void Body_Switch()
+ 156          {
+ 157   1              switch (length)
+ 158   1              {
+ 159   2                      case 1: body_x[0] = head_x; body_y[0] = head_y; break;
+ 160   2                      case 2: body_x[1] = body_x[0]; body_y[1] = body_y[0];
+ 161   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 162   2                      case 3: for (o = 2; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 163   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 164   2                      case 4: for (o = 3; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 165   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 166   2                      case 5: for (o = 4; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 167   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 168   2                      case 6: for (o = 5; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 169   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 170   2                      case 7: for (o = 6; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 171   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 172   2                      case 8: for (o = 7; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 173   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 174   2                      case 9: for (o = 8; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 175   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 176   2                      case 10: for (o = 9; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 177   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+C51 COMPILER V9.54   MAIN                                                                  09/04/2022 14:30:53 PAGE 4   
+
+ 178   2                      case 11: for (o = 10; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 179   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 180   2                      case 12: for (o = 11; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 181   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 182   2                      case 13: for (o = 12; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 183   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 184   2                      case 14: for (o = 13; o > -1; o--) {p = o + 1; body_x[p] = body_x[o]; body_y[p] = body_y[o]; }
+ 185   2                                              body_x[0] = head_x; body_y[0] = head_y; break;
+ 186   2                      default: length = 1;
+ 187   2              }
+ 188   1      }
+ 189          
+ 190          void Timer0_Routine()   interrupt 1
+ 191          {
+ 192   1              static unsigned int count0, count1;
+ 193   1              
+ 194   1              TL0 = 0x66;                     
+ 195   1              TH0 = 0xFC;
+ 196   1              count0 ++;
+ 197   1              count1 ++;
+ 198   1              
+ 199   1              if (count0 >= 100)
+ 200   1              {
+ 201   2                      count0 = 0;
+ 202   2                      keyNum = MatrixKey();
+ 203   2              }
+ 204   1              
+ 205   1              if (count1 >= 400)
+ 206   1              {
+ 207   2                      count1 = 0;
+ 208   2                      P2_0 =~ P2_0;
+ 209   2                      Body_Switch();
+ 210   2                      Body_Move();
+ 211   2                      Body_Death();
+ 212   2              }
+ 213   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2581    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     85    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

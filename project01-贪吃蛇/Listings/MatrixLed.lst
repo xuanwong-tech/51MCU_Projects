@@ -1,0 +1,108 @@
+C51 COMPILER V9.54   MATRIXLED                                                             09/04/2022 14:30:54 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MATRIXLED
+OBJECT MODULE PLACED IN .\Objects\MatrixLed.obj
+COMPILER INVOKED BY: D:\keil_v5\C51\BIN\C51.EXE MatrixLed.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings
+                    -\MatrixLed.lst) OBJECT(.\Objects\MatrixLed.obj)
+
+line level    source
+
+   1          #include <REGX52.H>
+   2          #include "Delay.h"
+   3          #include "Timer0.h"
+   4          
+   5          #define MATRIX_LED_PORT         P0
+   6          
+   7          unsigned char column;   //将要显示数据的列，范围0-7
+   8          unsigned char showData; //将要显示的数据，高位在前，置1为亮
+   9          
+  10          //将74HC595各引脚重新声明
+  11          sbit RCK = P3^5;        //RCLK
+  12          sbit SCK = P3^6;        //SRCLK
+  13          sbit SER = P3^4;        //SER
+  14          
+  15          /**
+  16            * @brief      LED点阵屏初始化函数
+  17            * @param      无
+  18            * @retval     无
+  19            */
+  20          void MatrixLed_Init()
+  21          {
+  22   1              SCK = 0;
+  23   1              RCK = 0;
+  24   1      }
+  25          
+  26          
+  27          /**
+  28            * @brief      向74HC595写入字节
+  29            * @param      byte    写入的一个字节，1选中0不选中
+  30            * @retval     无
+  31            */
+  32          void _74HC595_WriteByte(unsigned char byte)
+  33          {
+  34   1              unsigned char i;
+  35   1              
+  36   1              for (i = 0; i < 8; i++)
+  37   1              {
+  38   2                      SER = byte & (0x80 >> i);       //从高到低取位
+  39   2                      SCK = 1;                                        //SRCLK上升沿，进行移位
+  40   2                      SCK = 0;                                        //操作结束，置0等待
+  41   2              }
+  42   1              
+  43   1              RCK = 1;        //上升沿锁存一个寄存器
+  44   1              RCK = 0;        //结束置0
+  45   1      }
+  46          
+  47          /**
+  48            * @brief      LED点阵屏显示函数
+  49            * @param      column          列
+  50            * @param      showData        列要显示的数据
+  51            * @retval     无
+  52            */
+  53          void MatrixLed_ShowData(unsigned char column, showData)
+  54          {
+C51 COMPILER V9.54   MATRIXLED                                                             09/04/2022 14:30:54 PAGE 2   
+
+  55   1              _74HC595_WriteByte(showData);
+  56   1              MATRIX_LED_PORT =~ (0x80>>column);
+  57   1              Delay(1);
+  58   1              MATRIX_LED_PORT = 0xFF;
+  59   1      }
+  60          
+  61          /**
+  62            * @brief      将(x, y)坐标解码为具体的行与列
+  63            * @param      x       蛇的横坐标
+  64            * @param      y       蛇的纵坐标
+  65            * @retval     无
+  66            */
+  67          void MatrixLed_translate(int x, int y)
+  68          {
+  69   1              column = x;
+  70   1              switch(y)
+  71   1              {
+  72   2                      case 0: showData = 0x01; break;
+  73   2                      case 1: showData = 0x02; break;
+  74   2                      case 2: showData = 0x04; break;
+  75   2                      case 3: showData = 0x08; break;
+  76   2                      case 4: showData = 0x10; break;
+  77   2                      case 5: showData = 0x20; break;
+  78   2                      case 6: showData = 0x40; break;
+  79   2                      case 7: showData = 0x80; break;
+  80   2              }
+  81   1              MatrixLed_ShowData(column, showData);
+  82   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    174    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
